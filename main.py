@@ -69,20 +69,6 @@ def main(page: ft.Page):
             ))
         return items
 
-    def swap_data(e):
-        """選択中の行のtitleとcontentを入れ替える"""
-        if data_table.selected_row_indices:
-            selected_index = data_table.selected_row_indices[0]
-            row = fetch_data()[selected_index]
-            row_id, title, content = row[0], row[1], row[2]
-            update_csv_row(row_id, content, title)
-            data_table.rows = display_data()
-            page.update()
-            status_message.value = f"ID {row_id} のタイトルとコンテンツを入れ替えました。"
-        else:
-            status_message.value = "行を選択してください。"
-        page.update()
-
     def clipboard_to_csv():
         """クリップボードのデータをCSVに追加"""
         nonlocal content_A, content_B
@@ -104,7 +90,7 @@ def main(page: ft.Page):
             content_B = ""
         else:
             content_B = content_A
-            status_message.value = content_B + "を記録しました。再度ctrl+Cでコピー、ctrl+alt+cでデータセット登録。\n"
+            status_message.value = "『" + content_B + "』を記録しました。再度ctrl+Cでコピー、ctrl+alt+cでデータセット登録。\n"
             playsound("assets\got_data.mp3")
             content_A = ""
 
@@ -114,6 +100,23 @@ def main(page: ft.Page):
         """CSVファイルがあるディレクトリをエクスプローラーで開く"""
         directory = os.path.abspath(os.path.dirname("clipboard_data.csv"))
         subprocess.Popen(f'explorer "{directory}"', shell=True)
+
+    def swap_data_by_id(e):
+        """IDを入力して指定された行のtitleとcontentを入れ替える"""
+        row_id = id_input.value
+        if row_id:
+            data = fetch_data()
+            for row in data:
+                if row[0] == row_id:
+                    update_csv_row(row_id, row[2], row[1])  # titleとcontentを入れ替え
+                    data_table.rows = display_data()
+                    status_message.value = f"ID {row_id} のタイトルとコンテンツを入れ替えました。"
+                    page.update()
+                    return
+            status_message.value = f"ID {row_id} のデータが見つかりませんでした。"
+        else:
+            status_message.value = "有効なIDを入力してください。"
+        page.update()
 
     # UIコンポーネントの作成
     data_table = ft.DataTable(
@@ -131,8 +134,9 @@ def main(page: ft.Page):
     # add_button = ft.ElevatedButton("追加", on_click=clipboard_to_csv)
     status_message = ft.Text(value="ctrl+Cでコピー、ctrl+alt+cでデータセット登録", color=ft.colors.GREEN)
     guide_message = ft.Text(value="エクスプローラーで開くと、csvファイルを複製・名称変更できます", color=ft.colors.WHITE)
-
+    id_input = ft.TextField(label="IDを入力", width=200)
     open_dir_button = ft.ElevatedButton("エクスプローラーで開く", on_click=open_directory)
+    swap_button = ft.ElevatedButton("タイトルと内容を入れ替え", on_click=swap_data_by_id)
 
     # レイアウト設定
     page.add(
@@ -142,6 +146,8 @@ def main(page: ft.Page):
                 open_dir_button,
                 status_message,
                 guide_message,
+                id_input,
+                swap_button,
                 data_table,
             ]
         )
