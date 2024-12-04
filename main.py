@@ -5,8 +5,28 @@ import keyboard
 from playsound import playsound
 #効果音は効果音ラボから https://soundeffect-lab.info/sound/button/
 import subprocess
-
 import flet as ft
+import json
+
+# グローバル変数
+hotkey_value = "ctrl + alt + c"
+row_id = 0
+
+# 設定ファイルのパス
+settings_file = "settings.json"
+
+# 設定の読み込み
+def load_settings():
+    global hotkey_value
+    if os.path.exists(settings_file):
+        with open(settings_file, "r", encoding="utf-8") as file:
+            settings = json.load(file)
+            hotkey_value = settings.get("hotkey", hotkey_value)
+
+# 設定の保存
+def save_settings(hotkey_value):
+    with open(settings_file, "w", encoding="utf-8") as file:
+        json.dump({"hotkey": hotkey_value}, file)
 
 # CSVファイル操作関連
 def setup_csv():
@@ -24,7 +44,7 @@ def fetch_data():
         reader = csv.reader(file)
         next(reader, None)  # ヘッダーをスキップ
         rows = [row for row in reader]
-    return rows[::-1]  # データを逆順で取得
+    return sorted(rows, key=lambda x: int(x[0]), reverse=True)  # IDの大きい順にソートして取得
 
 def insert_into_csv(title, content):
     """CSVファイルにデータを挿入"""
@@ -49,6 +69,7 @@ def update_csv_row(row_id, title, content):
 # GUI関連 (Fletを使用するように変更)
 def main(page: ft.Page):
     setup_csv()
+    load_settings()
 
     content_A = ""
     content_B = ""
@@ -118,6 +139,22 @@ def main(page: ft.Page):
             status_message.value = "有効なIDを入力してください。"
         page.update()
 
+    def update_hotkey(e):
+        """ホットキーを更新"""
+        hotkey_value = hotkey_input.value
+        if hotkey_value:
+            keyboard.remove_all_hotkeys()
+            keyboard.add_hotkey(hotkey_value, clipboard_to_csv)
+            save_settings(hotkey_value)  # 設定を保存
+            status_message.value = f"ホットキーを {hotkey_value} に変更しました。"
+        else:
+            status_message.value = "有効なホットキーを入力してください。"
+        page.update()
+        print("ホットキーを登録しsetting.jsonに保存しました: " + hotkey_value)
+
+    # 初期ホットキーの登録
+    keyboard.add_hotkey(hotkey_value, clipboard_to_csv)
+
     # UIコンポーネントの作成
     data_table = ft.DataTable(
         columns=[
@@ -132,11 +169,13 @@ def main(page: ft.Page):
     )
 
     # add_button = ft.ElevatedButton("追加", on_click=clipboard_to_csv)
-    status_message = ft.Text(value="ctrl+Cでコピー、ctrl+alt+cでデータセット登録", color=ft.colors.GREEN)
+    status_message = ft.Text(value="ctrl+Cでコピー、ctrl+alt+Cでデータセット登録", color=ft.colors.GREEN)
     guide_message = ft.Text(value="エクスプローラーで開くと、csvファイルを複製・名称変更できます", color=ft.colors.WHITE)
-    id_input = ft.TextField(label="IDを入力", width=200)
+    id_input = ft.TextField(label="入れ替えたい行のIDを入力", value=row_id, width=200)
     open_dir_button = ft.ElevatedButton("エクスプローラーで開く", on_click=open_directory)
     swap_button = ft.ElevatedButton("タイトルと内容を入れ替え", on_click=swap_data_by_id)
+    hotkey_input = ft.TextField(label="ホットキーを設定 (例: ctrl+alt+c)", value=hotkey_value, width=200)
+    update_hotkey_button = ft.ElevatedButton("ホットキー更新", on_click=update_hotkey)
 
     # レイアウト設定
     page.add(
@@ -146,16 +185,24 @@ def main(page: ft.Page):
                 open_dir_button,
                 status_message,
                 guide_message,
-                id_input,
-                swap_button,
+                ft.Row(
+                    [
+                        id_input,
+                        swap_button,
+                    ],
+                ),
+                ft.Row(
+                    [
+                        hotkey_input,
+                        update_hotkey_button,
+                    ],
+                ),
                 data_table,
             ]
         )
     )
 
-    # キーボードショートカットの登録
-    hotkey = 'ctrl + alt + c'
-    keyboard.add_hotkey(hotkey, clipboard_to_csv)
+
 
 # Fletアプリの実行
 ft.app(target=main)
