@@ -4,6 +4,7 @@ import pyperclip
 import keyboard
 from playsound import playsound
 #効果音は効果音ラボから https://soundeffect-lab.info/sound/button/
+import subprocess
 
 import flet as ft
 
@@ -97,17 +98,22 @@ def main(page: ft.Page):
             title, content = contents[0], contents[1]
             insert_into_csv(title, content)
             data_table.rows = display_data()
-            status_message.value = "データセットを追加しました。\n"
+            status_message.value = "新しいカラムを追加しました。\n"
             playsound("assets\complete_dataset.mp3")
             content_A = ""
             content_B = ""
         else:
             content_B = content_A
-            status_message.value = "成功。タイトル/コンテンツを追加してください。\n"
+            status_message.value = content_B + "を記録しました。再度ctrl+Cでコピー、ctrl+alt+cでデータセット登録。\n"
             playsound("assets\got_data.mp3")
             content_A = ""
 
         page.update()
+
+    def open_directory(e):
+        """CSVファイルがあるディレクトリをエクスプローラーで開く"""
+        directory = os.path.abspath(os.path.dirname("clipboard_data.csv"))
+        subprocess.Popen(f'explorer "{directory}"', shell=True)
 
     # UIコンポーネントの作成
     data_table = ft.DataTable(
@@ -124,20 +130,20 @@ def main(page: ft.Page):
 
     # add_button = ft.ElevatedButton("追加", on_click=clipboard_to_csv)
     status_message = ft.Text(value="ctrl+Cでコピー、ctrl+alt+cでデータセット登録", color=ft.colors.GREEN)
+    guide_message = ft.Text(value="エクスプローラーで開くと、csvファイルを複製・名称変更できます", color=ft.colors.WHITE)
+
+    open_dir_button = ft.ElevatedButton("エクスプローラーで開く", on_click=open_directory)
 
     # レイアウト設定
     page.add(
-        ft.Row(
+        ft.Column(
             [
+                # add_button,  # 必要に応じてコメントを解除
+                open_dir_button,
+                status_message,
+                guide_message,
                 data_table,
-                ft.Column(
-                    [
-                        # add_button,
-                        status_message,
-                    ],
-                    scroll=ft.ScrollMode.ALWAYS,
-                ),
-            ],
+            ]
         )
     )
 
