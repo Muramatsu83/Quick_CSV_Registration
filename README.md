@@ -36,8 +36,10 @@ python ./main.py
 - 再びホットキーを押して、二つ目のデータを登録します。CSVにデータが追加され、画面に表示されます。
 
 ## クレジット
-- 効果音：効果音ラボ https://soundeffect-lab.info/sound/button/
+- 効果音：[効果音ラボ](https://soundeffect-lab.info/sound/button/)
 
+## ライセンス
+[MIT License](https://opensource.org/license/MIT)の元で提供されます 
 
 # Quick_CSV_Registration
 
@@ -81,3 +83,6 @@ python ./main.py
 ## Credits
 - Sound effects: **Sound Effect Lab**  
   [https://soundeffect-lab.info/sound/button/](https://soundeffect-lab.info/sound/button/)
+
+## License
+This app is provided under the terms of the [MIT License](https://opensource.org/license/MIT)
